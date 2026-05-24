@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#09090f;--bg2:#0f0f1a;--bg3:#15151f;--bg4:#1c1c28;
+  --border:#ffffff0f;--border2:#ffffff18;
+  --text:#f0f0f5;--text2:#9090a8;--text3:#555568;
+  --purple:#c084fc;--pink:#f472b6;--green:#4ade80;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;
+  --grad:linear-gradient(135deg,#c084fc,#f472b6);
+}
+body{background:#12121e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;justify-content:center;padding:24px 12px;gap:24px;flex-wrap:wrap;}
+.col{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.lbl{font-size:11px;color:#888;text-align:center;}
+.phone{width:295px;background:var(--bg);border-radius:40px;border:1.5px solid var(--border2);overflow:hidden;position:relative;flex-shrink:0;}
+.notch{width:90px;height:24px;background:var(--bg);border-radius:0 0 18px 18px;margin:0 auto;}
+.sbar{display:flex;justify-content:space-between;padding:8px 18px 0;font-size:11px;color:var(--text3);}
+.screen{display:none;flex-direction:column;height:622px;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* GENERICS */
+.btn-grad{background:var(--grad);border:none;border-radius:14px;padding:13px;font-size:13px;color:#fff;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;}
+.range{width:100%;accent-color:var(--purple);}
+.scroll{overflow-y:auto;flex:1;}
+
+/* BOTTOM NAV */
+.bnav{display:flex;justify-content:space-around;padding:8px 0 14px;border-top:0.5px solid var(--border);flex-shrink:0;}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;color:var(--text3);cursor:pointer;position:relative;min-width:52px;}
+.ni.on{color:var(--purple);}
+.ni-wrap{width:44px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:10px;transition:background .2s;}
+.ni.on .ni-wrap{background:rgba(192,132,252,.15);}
+.ni i{font-size:22px;transition:color .2s;}
+.nibadge{position:absolute;top:0px;right:4px;width:8px;height:8px;background:var(--pink);border-radius:50%;border:1.5px solid var(--bg);}
+
+/* BACK HDR */
+.back-hdr{display:flex;align-items:center;gap:10px;padding:8px 16px 6px;flex-shrink:0;}
+.back-btn{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.back-title{font-size:15px;font-weight:700;color:var(--text);}
+
+/* HEADER */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 16px 4px;flex-shrink:0;}
+.hdr-logo{font-size:22px;font-weight:800;letter-spacing:-0.5px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.pill{display:flex;align-items:center;gap:5px;background:var(--bg3);border-radius:20px;padding:5px 10px;cursor:pointer;border:0.5px solid var(--border);}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--green);transition:background .3s;}
+.pdot.off{background:var(--text3);}
+.notif-btn{position:relative;width:34px;height:34px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0.5px solid var(--border);}
+.nbadge{position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--pink);border-radius:50%;border:1.5px solid var(--bg);}
+
+/* ONBOARDING */
+.splash{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 22px;}
+.logo{font-size:52px;font-weight:800;letter-spacing:-2px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.feat-row{display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:12px;padding:10px 13px;width:100%;}
+.onb{flex:1;display:flex;flex-direction:column;align-items:center;padding:14px 22px;gap:0;}
+.onb-step{font-size:11px;color:var(--text3);align-self:flex-start;margin-bottom:8px;}
+.onb-img{width:100px;height:100px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:42px;}
+.onb-input{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:13px;padding:11px 14px;font-size:13px;color:var(--text);margin-bottom:8px;outline:none;}
+.onb-input:focus{border-color:var(--purple);}
+.dots{display:flex;gap:6px;margin:auto 0 4px;}
+.dot-i{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+.dot-i.on{width:18px;background:var(--purple);}
+.verify-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(96,165,250,.1);border:0.5px solid rgba(96,165,250,.3);border-radius:8px;padding:2px 7px;font-size:10px;color:var(--blue);}
+
+/* MAP */
+.map-wrap{margin:5px 12px;border-radius:20px;height:188px;min-height:140px;position:relative;overflow:hidden;border:0.5px solid var(--border);flex:1;}
+#leafmap{width:100%;height:100%;}
+.leaflet-tile{filter:brightness(.42) saturate(.5) hue-rotate(195deg);}
+.leaflet-control-zoom,.leaflet-control-attribution{display:none!important;}
+.me-marker{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#c084fc,#f472b6);border:2px solid #09090f;box-shadow:0 0 0 7px rgba(192,132,252,.18);}
+.umark{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid #09090f;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);}
+.leaflet-popup-content-wrapper{background:#15151f;border:0.5px solid rgba(255,255,255,.12);border-radius:12px;color:#f0f0f5;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+.leaflet-popup-tip{background:#15151f;}
+.leaflet-popup-content{margin:8px 12px;font-size:12px;}
+.pop-hdl{color:var(--purple);font-weight:700;}
+.pop-dist{color:var(--text2);font-size:11px;margin-top:2px;}
+.pop-btn{margin-top:8px;background:var(--grad);border:none;border-radius:9px;padding:6px 0;font-size:11px;color:#fff;font-weight:700;width:100%;cursor:pointer;}
+.map-badge{position:absolute;top:8px;left:10px;background:rgba(9,9,15,.9);border-radius:10px;padding:5px 10px;font-size:10px;color:var(--text2);border:0.5px solid var(--border2);z-index:20;display:flex;align-items:center;gap:4px;}
+.map-filter-btn{position:absolute;bottom:8px;right:10px;background:rgba(9,9,15,.9);border-radius:10px;padding:5px 10px;font-size:10px;color:var(--purple);border:0.5px solid var(--border2);z-index:20;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.evento-btn{position:absolute;top:8px;right:10px;background:rgba(251,191,36,.15);border:0.5px solid rgba(251,191,36,.4);border-radius:10px;padding:5px 10px;font-size:10px;color:var(--amber);z-index:20;cursor:pointer;display:flex;align-items:center;gap:4px;}
+
+/* FILTER TAGS */
+.ftags{display:flex;gap:6px;padding:4px 12px;overflow-x:auto;flex-shrink:0;}
+.ftags::-webkit-scrollbar{display:none;}
+.ftag{background:var(--bg3);border:0.5px solid var(--border);border-radius:20px;padding:5px 12px;font-size:11px;color:var(--text2);white-space:nowrap;cursor:pointer;}
+.ftag.on{background:rgba(192,132,252,.15);border-color:var(--purple);color:var(--purple);}
+
+/* CARDS */
+.cards-row{display:flex;gap:8px;padding:0 12px 8px;overflow-x:auto;flex-shrink:0;}
+.cards-row::-webkit-scrollbar{display:none;}
+.card{background:var(--bg3);border:0.5px solid var(--border);border-radius:18px;padding:11px 10px;min-width:104px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;position:relative;}
+.av-ring{position:absolute;inset:-3px;border-radius:50%;background:var(--grad);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:2px;}
+.cname{font-size:12px;font-weight:600;color:var(--text);}
+.chdl{font-size:10px;color:var(--text3);}
+.cdist{font-size:10px;color:var(--purple);display:flex;align-items:center;gap:2px;}
+.cbtn{width:100%;background:var(--grad);border:none;border-radius:9px;padding:5px 0;font-size:10px;color:#fff;cursor:pointer;font-weight:600;margin-top:2px;}
+.cbtn.sent{background:transparent;border:0.5px solid var(--border2);color:var(--text3);}
+.cbtn.match{background:rgba(74,222,128,.15);border:0.5px solid rgba(74,222,128,.3);color:var(--green);}
+
+/* SECTION HDR */
+.shdr{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 4px;flex-shrink:0;}
+.stitle{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+.scount{font-size:11px;color:var(--purple);}
+
+/* REQUESTS */
+.rlist{display:flex;flex-direction:column;gap:6px;padding:0 12px;}
+.req{background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;transition:opacity .3s;}
+.req.dim{opacity:.3;}
+.rav{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;}
+.rinfo{flex:1;}
+.rname{font-size:13px;font-weight:600;color:var(--text);}
+.rsub{font-size:10px;color:var(--text3);margin-top:1px;}
+.rbtns{display:flex;gap:5px;}
+.btn-a{background:var(--grad);border:none;border-radius:9px;padding:6px 10px;font-size:11px;color:#fff;cursor:pointer;font-weight:600;}
+.btn-d{background:transparent;border:0.5px solid var(--border2);border-radius:9px;padding:6px 10px;font-size:11px;color:var(--text2);cursor:pointer;}
+
+/* TABS */
+.tabs{display:flex;margin:6px 12px 0;background:var(--bg3);border-radius:12px;padding:3px;flex-shrink:0;}
+.tab{flex:1;text-align:center;padding:7px;font-size:11px;color:var(--text3);border-radius:9px;cursor:pointer;}
+.tab.on{background:var(--bg4);color:var(--purple);font-weight:600;}
+
+/* PROFILE */
+.prof-hero{display:flex;flex-direction:column;align-items:center;padding:12px 22px 8px;gap:4px;flex-shrink:0;}
+.prof-av{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#db2777);display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:700;color:#fff;position:relative;}
+.prof-ring{position:absolute;inset:-3px;border-radius:50%;background:var(--grad);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:2px;}
+.pstats{display:flex;width:100%;background:var(--bg3);border-radius:13px;border:0.5px solid var(--border);overflow:hidden;margin:4px 0;}
+.pstat{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 4px;border-right:0.5px solid var(--border);}
+.pstat:last-child{border:none;}
+.psn{font-size:15px;font-weight:700;color:var(--text);}
+.psl{font-size:10px;color:var(--text3);}
+.slist{display:flex;flex-direction:column;gap:4px;padding:0 12px;}
+.srow{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:14px;padding:11px 13px;cursor:pointer;border:0.5px solid var(--border);}
+.srow-l{display:flex;align-items:center;gap:10px;}
+.sico{font-size:18px;color:var(--purple);}
+.slbl{font-size:13px;color:var(--text);}
+.ssub{font-size:10px;color:var(--text3);}
+.srow-r{color:var(--text3);font-size:14px;}
+.tog{width:36px;height:20px;background:var(--bg4);border-radius:20px;position:relative;cursor:pointer;border:0.5px solid var(--border2);}
+.tog.on{background:rgba(192,132,252,.4);}
+.tog-t{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text3);transition:all .3s;}
+.tog.on .tog-t{left:18px;background:var(--purple);}
+
+/* CHAT */
+.chat-item{display:flex;align-items:center;gap:11px;padding:11px 14px;cursor:pointer;border-bottom:0.5px solid var(--border);}
+.chat-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;position:relative;}
+.chat-online{position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg);}
+.chat-name{font-size:13px;font-weight:600;color:var(--text);}
+.chat-last{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.chat-time{font-size:10px;color:var(--text3);}
+.chat-unread{width:18px;height:18px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;}
+.chat-hdr{display:flex;align-items:center;gap:10px;padding:8px 14px 8px;border-bottom:0.5px solid var(--border);flex-shrink:0;}
+.chat-hdr-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+.chat-hdr-name{font-size:14px;font-weight:600;color:var(--text);}
+.chat-hdr-sub{font-size:10px;color:var(--green);}
+.messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.msg{max-width:75%;padding:9px 12px;border-radius:16px;font-size:12px;line-height:1.4;}
+.msg.in{background:var(--bg3);color:var(--text);border-bottom-left-radius:4px;align-self:flex-start;}
+.msg.out{background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;border-bottom-right-radius:4px;align-self:flex-end;}
+.msg-time{font-size:9px;color:var(--text3);margin-top:2px;}
+.msg-time.r{text-align:right;}
+.chat-input-wrap{display:flex;gap:8px;padding:8px 12px 12px;border-top:0.5px solid var(--border);flex-shrink:0;align-items:center;}
+.chat-input{flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;padding:9px 14px;font-size:12px;color:var(--text);outline:none;}
+.chat-send{width:36px;height:36px;border-radius:50%;background:var(--grad);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+
+/* HISTORIAL */
+.hist-item{display:flex;align-items:center;gap:11px;background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:11px 13px;margin:0 12px 6px;}
+
+/* STATS */
+.stat-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:13px;margin:0 12px 8px;}
+.stat-card-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.bar-row{display:flex;align-items:flex-end;gap:5px;height:50px;}
+.bar{flex:1;border-radius:4px 4px 0 0;background:var(--bg4);position:relative;min-height:4px;height:100%;}
+.bar-fill{position:absolute;bottom:0;left:0;right:0;border-radius:4px 4px 0 0;background:var(--grad);}
+.bar-lbl{font-size:9px;color:var(--text3);text-align:center;margin-top:4px;flex:1;}
+.hour-cell{flex:1;height:24px;border-radius:4px;background:var(--bg4);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);}
+.stat-row:last-child{border:none;}
+
+/* PREMIUM */
+.ptogs{display:flex;background:var(--bg3);border-radius:13px;padding:3px;margin:4px 12px 8px;border:0.5px solid var(--border);flex-shrink:0;}
+.ptog{flex:1;text-align:center;padding:7px;font-size:12px;color:var(--text3);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;}
+.ptog.on{background:var(--bg4);color:var(--purple);font-weight:600;}
+.plan{background:var(--bg3);border:0.5px solid var(--border);border-radius:18px;padding:13px;cursor:pointer;margin-bottom:8px;}
+.plan.sel{border:1.5px solid var(--purple);background:rgba(192,132,252,.07);}
+.fi{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:4px;}
+.fi.no{color:var(--text3);}
+.fi i{font-size:13px;flex-shrink:0;}
+.fi.ok i{color:var(--green);}
+.fi.no i{color:var(--text3);}
+.cta{width:100%;background:var(--grad);border:none;border-radius:14px;padding:13px;font-size:14px;color:#fff;font-weight:700;cursor:pointer;margin-bottom:6px;}
+
+/* OVERLAYS */
+.overlay{position:absolute;inset:0;background:rgba(9,9,15,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;z-index:50;opacity:0;pointer-events:none;transition:opacity .35s;}
+.overlay.show{opacity:1;pointer-events:all;}
+.ov-title{font-size:26px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;}
+.ov-btn{width:100%;background:var(--grad);border:none;border-radius:14px;padding:12px;font-size:14px;color:#fff;font-weight:600;cursor:pointer;margin-top:4px;}
+.ov-skip{font-size:11px;color:var(--text3);cursor:pointer;margin-top:2px;}
+.stars{display:flex;gap:6px;}
+.star{color:var(--purple);animation:blink 1.5s infinite;}
+.star:nth-child(2){animation-delay:.3s;}
+.star:nth-child(3){animation-delay:.6s;}
+@keyframes blink{0%,100%{opacity:.2;}50%{opacity:1;}}
+.fmodal{position:absolute;inset:0;background:rgba(9,9,15,.9);display:flex;flex-direction:column;justify-content:flex-end;z-index:40;opacity:0;pointer-events:none;transition:opacity .25s;}
+.fmodal.show{opacity:1;pointer-events:all;}
+.fsheet{background:var(--bg2);border-radius:22px 22px 0 0;padding:18px 16px 26px;border-top:0.5px solid var(--border2);}
+.fopt{background:var(--bg3);border:0.5px solid var(--border);border-radius:11px;padding:9px;text-align:center;cursor:pointer;font-size:12px;color:var(--text2);}
+.fopt.on{border-color:var(--purple);color:var(--purple);background:rgba(192,132,252,.1);}
+.toast{position:absolute;bottom:76px;left:50%;transform:translateX(-50%);background:var(--bg4);border:0.5px solid var(--border2);border-radius:11px;padding:9px 15px;font-size:12px;color:var(--text);white-space:nowrap;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<!-- PHONE 1: ONBOARDING -->
+<div class="col">
+<div class="phone">
+  <div id="s-splash" class="screen active">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="splash">
+      <div class="logo">aura</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:4px;">Conecta con quien tienes cerca,<br>sin la incomodidad de pedirlo</div>
+      <div class="feat-row"><i class="ti ti-map-pin" style="font-size:17px;color:var(--purple);"></i><span style="font-size:12px;color:var(--text2);">Descubre perfiles de Instagram cercanos</span></div>
+      <div class="feat-row"><i class="ti ti-shield-check" style="font-size:17px;color:var(--purple);"></i><span style="font-size:12px;color:var(--text2);">Solo ves quién también tiene Aura</span></div>
+      <div class="feat-row"><i class="ti ti-eye-off" style="font-size:17px;color:var(--purple);"></i><span style="font-size:12px;color:var(--text2);">Tú decides cuándo eres visible</span></div>
+      <button class="btn-grad" onclick="go('s-onb2')" style="margin-top:8px;"><i class="ti ti-brand-instagram" style="font-size:17px;"></i>Continuar con Instagram</button>
+      <div style="font-size:12px;color:var(--text3);cursor:pointer;">Ya tengo cuenta · Iniciar sesión</div>
+    </div>
+  </div>
+  <div id="s-onb2" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="onb">
+      <div class="onb-step">Paso 2 de 4</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px;">¿Cómo quieres aparecer?</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px;">Así te verán las personas cercanas</div>
+      <div class="onb-img">😎</div>
+      <input class="onb-input" placeholder="Tu nombre" value="Alex">
+      <input class="onb-input" placeholder="@usuario de Instagram" value="@alex.llei">
+      <div style="font-size:11px;color:var(--text3);align-self:flex-start;margin-bottom:4px;">Radio de visibilidad</div>
+      <input type="range" min="50" max="500" value="200" class="range" oninput="document.getElementById('rv1').textContent=this.value+'m'">
+      <div style="font-size:12px;color:var(--purple);align-self:flex-end;margin-bottom:10px;" id="rv1">200m</div>
+      <button class="btn-grad" onclick="go('s-onb3')">Siguiente</button>
+      <div class="dots" style="margin-top:12px;"><div class="dot-i"></div><div class="dot-i on"></div><div class="dot-i"></div><div class="dot-i"></div></div>
+    </div>
+  </div>
+  <div id="s-onb3" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="onb">
+      <div class="onb-step">Paso 3 de 4</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px;">Verifica tu cuenta</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px;">Conecta tu Instagram real para generar confianza</div>
+      <div class="onb-img" style="background:rgba(96,165,250,.15);border:2px solid rgba(96,165,250,.3);">✓</div>
+      <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:14px;padding:13px;width:100%;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><i class="ti ti-brand-instagram" style="color:var(--purple);font-size:18px;"></i><div style="font-size:13px;font-weight:600;color:var(--text);">@alex.llei</div><div class="verify-badge"><i class="ti ti-check" style="font-size:10px;"></i>Verificado</div></div>
+        <div style="font-size:11px;color:var(--text2);">Solo verificamos que la cuenta existe. No accedemos a tus mensajes ni datos privados.</div>
+      </div>
+      <button class="btn-grad" onclick="go('s-onb4')">Verificar con Instagram</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;cursor:pointer;">Saltar por ahora</div>
+      <div class="dots" style="margin-top:12px;"><div class="dot-i"></div><div class="dot-i"></div><div class="dot-i on"></div><div class="dot-i"></div></div>
+    </div>
+  </div>
+  <div id="s-onb4" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="onb">
+      <div class="onb-step">Paso 4 de 4</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);text-align:center;margin-bottom:4px;">Activa tu ubicación</div>
+      <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:14px;">Solo cuando tienes Aura abierta. Nunca en segundo plano.</div>
+      <div class="onb-img" style="background:rgba(192,132,252,.12);border:2px solid rgba(192,132,252,.25);">📍</div>
+      <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:14px;padding:13px;width:100%;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">Solo mientras usas la app</div>
+        <div style="font-size:11px;color:var(--text2);">La ubicación se activa únicamente con Aura en pantalla</div>
+      </div>
+      <button class="btn-grad" onclick="go('s-onb4')">Permitir ubicación</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;cursor:pointer;">Ahora no (función limitada)</div>
+      <div class="dots" style="margin-top:12px;"><div class="dot-i"></div><div class="dot-i"></div><div class="dot-i"></div><div class="dot-i on"></div></div>
+    </div>
+  </div>
+</div>
+<div class="lbl">Onboarding</div>
+</div>
+
+<!-- PHONE 2: APP -->
+<div class="col">
+<div class="phone" style="position:relative;">
+
+  <!-- RADAR -->
+  <div id="s-radar" class="screen active">
+    <div class="notch"></div>
+    <div class="sbar"><span>9:41</span><span style="color:var(--green);font-size:10px;">● EN VIVO</span></div>
+    <div class="hdr">
+      <div class="hdr-logo">aura</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="pill" onclick="toggleVis()"><div class="pdot" id="vdot"></div><span style="font-size:11px;color:var(--text2);" id="vlbl">Visible</span></div>
+        <div class="notif-btn" onclick="go('s-req')"><i class="ti ti-bell" style="font-size:18px;color:var(--text2);"></i><div class="nbadge"></div></div>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <div id="leafmap"></div>
+      <div class="map-badge"><i class="ti ti-users" style="font-size:12px;color:var(--purple);"></i>5 cerca</div>
+      <div class="evento-btn" onclick="showOv('eventoOv')"><i class="ti ti-confetti" style="font-size:12px;"></i>Modo Evento</div>
+      <div class="map-filter-btn" onclick="showFmodal()"><i class="ti ti-adjustments-horizontal" style="font-size:12px;"></i>Filtros</div>
+    </div>
+    <div class="ftags">
+      <div class="ftag on" onclick="setTag(this)">Todos (5)</div>
+      <div class="ftag" onclick="setTag(this)">Menos 100m</div>
+      <div class="ftag" onclick="setTag(this)">Mutuos</div>
+      <div class="ftag" onclick="setTag(this)">Nuevos hoy</div>
+    </div>
+    <div class="shdr"><span class="stitle">Cerca de ti</span><span class="scount" id="sc">5 personas</span></div>
+    <div class="cards-row" id="cards-row">
+      <div class="card" data-dist="32" data-mutual="1" data-new="1"><div class="av" style="background:#7c3aed;"><div class="av-ring"></div>LG</div><div class="cname">Laura</div><div class="chdl">@lauragg</div><div class="cdist"><i class="ti ti-map-pin" style="font-size:9px;"></i>32m</div><button class="cbtn" onclick="followCard(this,'Laura')">Seguir</button></div>
+      <div class="card" data-dist="45" data-mutual="0" data-new="1"><div class="av" style="background:#065f46;"><div class="av-ring"></div>NF</div><div class="cname">Nuria</div><div class="chdl">@nuria.f</div><div class="cdist"><i class="ti ti-map-pin" style="font-size:9px;"></i>45m</div><button class="cbtn" onclick="followCard(this,'Nuria')">Seguir</button></div>
+      <div class="card" data-dist="78" data-mutual="1" data-new="0"><div class="av" style="background:#0e7490;"><div class="av-ring"></div>MV</div><div class="cname">Marc</div><div class="chdl">@marc.v</div><div class="cdist"><i class="ti ti-map-pin" style="font-size:9px;"></i>78m</div><button class="cbtn" onclick="followCard(this,'Marc')">Seguir</button></div>
+      <div class="card" data-dist="95" data-mutual="0" data-new="0"><div class="av" style="background:#be185d;"><div class="av-ring"></div>SM</div><div class="cname">Sofía</div><div class="chdl">@sofiamr</div><div class="cdist"><i class="ti ti-map-pin" style="font-size:9px;"></i>95m</div><button class="cbtn" onclick="followCard(this,'Sofía')">Seguir</button></div>
+      <div class="card" data-dist="120" data-mutual="0" data-new="0"><div class="av" style="background:#b45309;"><div class="av-ring"></div>JB</div><div class="cname">Jordi</div><div class="chdl">@jordibcn</div><div class="cdist"><i class="ti ti-map-pin" style="font-size:9px;"></i>120m</div><button class="cbtn" onclick="followCard(this,'Jordi')">Seguir</button></div>
+    </div>
+    <div class="bnav">
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i><div class="nibadge"></div></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- CHATS -->
+  <div id="s-chats" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="hdr"><div class="hdr-logo">aura</div><span style="font-size:11px;color:var(--purple);">3 no leídos</span></div>
+    <div style="flex:1;overflow-y:auto;">
+      <div class="chat-item" onclick="go('s-chat')">
+        <div class="chat-av" style="background:#7c3aed;">LG<div class="chat-online"></div></div>
+        <div style="flex:1;min-width:0;"><div class="chat-name">Laura <span class="verify-badge">✓</span></div><div class="chat-last">jajaj sí, estaba justo ahí 😂</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="chat-time">14:32</div><div class="chat-unread">2</div></div>
+      </div>
+      <div class="chat-item" onclick="go('s-chat2')">
+        <div class="chat-av" style="background:#be185d;">SM</div>
+        <div style="flex:1;min-width:0;"><div class="chat-name">Sofía</div><div class="chat-last">¡Qué casualidad lo del radar! 🔥</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="chat-time">12:11</div><div class="chat-unread">1</div></div>
+      </div>
+      <div class="chat-item">
+        <div class="chat-av" style="background:#0e7490;">MV</div>
+        <div style="flex:1;min-width:0;"><div class="chat-name">Marc</div><div class="chat-last">Tú: ¡Perfecto, nos vemos!</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;"><div class="chat-time">Ayer</div></div>
+      </div>
+      <div style="padding:16px;text-align:center;font-size:12px;color:var(--text3);">Solo puedes chatear con tus matches ✨</div>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- CHAT 1 -->
+  <div id="s-chat" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="chat-hdr">
+      <div class="back-btn" onclick="go('s-chats')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div>
+      <div class="chat-hdr-av" style="background:#7c3aed;">LG</div>
+      <div style="flex:1;"><div class="chat-hdr-name">Laura <span class="verify-badge">✓</span></div><div class="chat-hdr-sub">● En línea · 32m</div></div>
+      <i class="ti ti-brand-instagram" style="font-size:20px;color:var(--text3);cursor:pointer;" onclick="toast('Abriendo @lauragg...')"></i>
+    </div>
+    <div class="messages" id="msgs">
+      <div><div class="msg in">Hola! te vi en el radar 👀</div><div class="msg-time">14:28</div></div>
+      <div style="align-self:flex-end;"><div class="msg out">Jaja sí! yo también te vi, qué casualidad</div><div class="msg-time r">14:29</div></div>
+      <div><div class="msg in">Estábamos a 32 metros y no lo sabíamos 😂</div><div class="msg-time">14:30</div></div>
+      <div style="align-self:flex-end;"><div class="msg out">Eso es lo mejor de Aura jaja</div><div class="msg-time r">14:31</div></div>
+      <div><div class="msg in">jajaj sí, estaba justo ahí 😂</div><div class="msg-time">14:32</div></div>
+    </div>
+    <div class="chat-input-wrap">
+      <input class="chat-input" id="cinput" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()"><i class="ti ti-send" style="font-size:15px;color:#fff;"></i></button>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- CHAT 2 -->
+  <div id="s-chat2" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="chat-hdr">
+      <div class="back-btn" onclick="go('s-chats')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div>
+      <div class="chat-hdr-av" style="background:#be185d;">SM</div>
+      <div style="flex:1;"><div class="chat-hdr-name">Sofía</div><div class="chat-hdr-sub">● En línea · 95m</div></div>
+      <i class="ti ti-brand-instagram" style="font-size:20px;color:var(--text3);cursor:pointer;"></i>
+    </div>
+    <div class="messages">
+      <div><div class="msg in">¡Qué casualidad lo del radar! 🔥</div><div class="msg-time">12:11</div></div>
+    </div>
+    <div class="chat-input-wrap">
+      <input class="chat-input" placeholder="Escribe un mensaje...">
+      <button class="chat-send"><i class="ti ti-send" style="font-size:15px;color:#fff;"></i></button>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div id="s-hist" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="hdr"><div class="hdr-logo">aura</div><span style="font-size:11px;color:var(--text2);">Últimos 7 días</span></div>
+    <div style="padding:0 12px 8px;font-size:12px;color:var(--text2);">Personas que cruzaron tu camino. Puedes seguirles aunque ya no estén cerca.</div>
+    <div class="scroll" style="padding-top:4px;">
+      <div class="hist-item"><div class="av" style="background:#7c3aed;width:42px;height:42px;font-size:14px;">LG</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);">@lauragg <span class="verify-badge">✓</span></div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Paseo de Ronda · Lleida</div><div style="font-size:10px;color:var(--purple);margin-top:1px;">Hoy 14:28 · 32m</div></div><button class="cbtn match" style="width:auto;padding:5px 10px;font-size:10px;">✓ Match</button></div>
+      <div class="hist-item"><div class="av" style="background:#b45309;width:42px;height:42px;font-size:14px;">JB</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);">@jordibcn</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Rambla Ferran · Lleida</div><div style="font-size:10px;color:var(--purple);margin-top:1px;">Ayer 19:45 · 58m</div></div><button class="cbtn" style="width:auto;padding:5px 10px;font-size:10px;" onclick="this.textContent='Enviado';this.className='cbtn sent';this.style.cssText='width:auto;padding:5px 10px;font-size:10px;'">Seguir</button></div>
+      <div class="hist-item"><div class="av" style="background:#0f766e;width:42px;height:42px;font-size:14px;">TG</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);">@toni.g</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Avda. Catalunya · Lleida</div><div style="font-size:10px;color:var(--purple);margin-top:1px;">Hace 2 días · 14m</div></div><button class="cbtn" style="width:auto;padding:5px 10px;font-size:10px;" onclick="this.textContent='Enviado';this.className='cbtn sent';this.style.cssText='width:auto;padding:5px 10px;font-size:10px;'">Seguir</button></div>
+      <div class="hist-item"><div class="av" style="background:#be185d;width:42px;height:42px;font-size:14px;">SM</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--text);">@sofiamr</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Campus UdL · Lleida</div><div style="font-size:10px;color:var(--purple);margin-top:1px;">Hace 3 días · 22m</div></div><button class="cbtn match" style="width:auto;padding:5px 10px;font-size:10px;">✓ Match</button></div>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- SOLICITUDES -->
+  <div id="s-req" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="hdr">
+      <div style="display:flex;align-items:center;gap:8px;"><div class="back-btn" onclick="go('s-radar')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div><div class="hdr-logo">aura</div></div>
+      <span style="font-size:11px;color:var(--purple);">2 nuevas</span>
+    </div>
+    <div class="tabs">
+      <div class="tab on" id="t-rec" onclick="stab('rec')">Recibidas (2)</div>
+      <div class="tab" id="t-env" onclick="stab('env')">Enviadas</div>
+      <div class="tab" id="t-mat" onclick="stab('mat')">Matches ✨</div>
+    </div>
+    <div id="p-rec" style="flex:1;overflow-y:auto;padding:8px 0 0;"><div class="rlist">
+      <div class="req" id="req1"><div class="rav" style="background:#7c3aed;">LG</div><div class="rinfo"><div class="rname">@lauragg <span class="verify-badge">✓</span></div><div class="rsub">32m · hace 5 min</div></div><div class="rbtns"><button class="btn-a" onclick="acceptReq('req1')">Aceptar</button><button class="btn-d" onclick="acceptReq('req1')">Ignorar</button></div></div>
+      <div class="req" id="req2"><div class="rav" style="background:#0e7490;">MV</div><div class="rinfo"><div class="rname">@marc.v</div><div class="rsub">78m · hace 18 min</div></div><div class="rbtns"><button class="btn-a" onclick="acceptReq('req2')">Aceptar</button><button class="btn-d" onclick="acceptReq('req2')">Ignorar</button></div></div>
+    </div></div>
+    <div id="p-env" style="display:none;flex:1;overflow-y:auto;padding:8px 0 0;"><div class="rlist">
+      <div class="req"><div class="rav" style="background:#b45309;">JB</div><div class="rinfo"><div class="rname">@jordibcn</div><div class="rsub">120m · hace 2h</div></div><span style="font-size:10px;color:var(--text3);">Pendiente</span></div>
+      <div class="req"><div class="rav" style="background:#065f46;">NF</div><div class="rinfo"><div class="rname">@nuria.f</div><div class="rsub">45m · hace 1h</div></div><span style="font-size:10px;color:var(--text3);">Pendiente</span></div>
+    </div></div>
+    <div id="p-mat" style="display:none;flex:1;overflow-y:auto;padding:8px 0 0;"><div class="rlist">
+      <div class="req"><div class="rav" style="background:#be185d;">SM</div><div class="rinfo"><div class="rname">@sofiamr</div><div class="rsub">95m · <span style="color:var(--green);">¡Match!</span></div></div><span style="font-size:18px;">✨</span></div>
+      <div class="req"><div class="rav" style="background:#7c3aed;">LG</div><div class="rinfo"><div class="rname">@lauragg</div><div class="rsub">32m · <span style="color:var(--green);">¡Match!</span></div></div><span style="font-size:18px;">✨</span></div>
+    </div></div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni" onclick="go('s-prof')"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- PERFIL -->
+  <div id="s-prof" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="hdr"><div class="hdr-logo">aura</div><span style="font-size:11px;color:var(--text2);">Mi perfil</span></div>
+    <div class="prof-hero">
+      <div class="prof-av"><div class="prof-ring"></div>A</div>
+      <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:17px;font-weight:700;color:var(--text);">Alex</span><div class="verify-badge"><i class="ti ti-check" style="font-size:10px;"></i>Verificado</div></div>
+      <div style="font-size:12px;color:var(--text2);">@alex.llei · Lleida</div>
+      <div class="pstats">
+        <div class="pstat"><div class="psn">12</div><div class="psl">Conexiones</div></div>
+        <div class="pstat"><div class="psn">3</div><div class="psl">Matches</div></div>
+        <div class="pstat"><div class="psn">47</div><div class="psl">Te vieron</div></div>
+        <div class="pstat"><div class="psn">8d</div><div class="psl">Racha</div></div>
+      </div>
+      <button style="background:transparent;border:0.5px solid var(--border2);border-radius:12px;padding:7px;font-size:12px;color:var(--text2);cursor:pointer;width:100%;">Editar perfil</button>
+    </div>
+    <div class="scroll"><div class="slist" style="padding-bottom:10px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:2px 2px 4px;">Privacidad</div>
+      <div class="srow"><div class="srow-l"><i class="ti ti-eye sico"></i><div><div class="slbl">Modo visible</div><div class="ssub">Las personas te verán en el radar</div></div></div><div class="tog on" onclick="this.classList.toggle('on')"><div class="tog-t"></div></div></div>
+      <div class="srow" style="flex-direction:column;align-items:flex-start;gap:5px;">
+        <div style="display:flex;justify-content:space-between;width:100%;"><div class="srow-l"><i class="ti ti-map-pin sico"></i><div class="slbl">Radio de detección</div></div><span style="font-size:12px;color:var(--purple);" id="rval">200m</span></div>
+        <input type="range" min="50" max="500" value="200" class="range" style="width:100%;" oninput="document.getElementById('rval').textContent=this.value+'m'">
+      </div>
+      <div class="srow"><div class="srow-l"><i class="ti ti-ghost sico"></i><div><div class="slbl">Modo fantasma</div><div class="ssub">Ves a otros, ellos no a ti</div></div></div><div class="tog" onclick="this.classList.toggle('on')"><div class="tog-t"></div></div></div>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 2px 4px;">Cuenta</div>
+      <div class="srow" onclick="go('s-stats')"><div class="srow-l"><i class="ti ti-chart-bar sico" style="color:var(--blue);"></i><div><div class="slbl">Mis estadísticas</div><div class="ssub">Vistas, matches, zonas top</div></div></div><div class="srow-r"><i class="ti ti-chevron-right"></i></div></div>
+      <div class="srow"><div class="srow-l"><i class="ti ti-bell sico"></i><div class="slbl">Notificaciones</div></div><div class="tog on" onclick="this.classList.toggle('on')"><div class="tog-t"></div></div></div>
+      <div class="srow" onclick="go('s-block')"><div class="srow-l"><i class="ti ti-ban sico" style="color:var(--red);"></i><div><div class="slbl" style="color:var(--red);">Usuarios bloqueados</div></div></div><div class="srow-r"><i class="ti ti-chevron-right"></i></div></div>
+      <div class="srow" onclick="go('s-prem')" style="border-color:rgba(192,132,252,.3);background:rgba(192,132,252,.06);"><div class="srow-l"><i class="ti ti-star sico" style="color:var(--amber);"></i><div><div class="slbl" style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700;">Aura Premium</div><div class="ssub">Desbloquea todas las funciones</div></div></div><div class="srow-r"><i class="ti ti-chevron-right" style="color:var(--purple);"></i></div></div>
+    </div></div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS -->
+  <div id="s-stats" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="back-hdr"><div class="back-btn" onclick="go('s-prof')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div><div class="back-title">Mis estadísticas</div></div>
+    <div class="scroll" style="padding:0 0 10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 8px;">
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Te vieron esta semana</div><div style="font-size:26px;font-weight:800;color:var(--text);">47<span style="font-size:11px;color:var(--green);margin-left:4px;">+12%</span></div></div>
+        <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Matches esta semana</div><div style="font-size:26px;font-weight:800;color:var(--green);">3<span style="font-size:11px;margin-left:4px;">↑</span></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Vistas por día</div>
+        <div class="bar-row">
+          <div class="bar"><div class="bar-fill" style="height:40%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:65%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:30%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:80%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:55%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:90%;"></div></div>
+          <div class="bar"><div class="bar-fill" style="height:70%;"></div></div>
+        </div>
+        <div style="display:flex;margin-top:4px;"><div class="bar-lbl">L</div><div class="bar-lbl">M</div><div class="bar-lbl">X</div><div class="bar-lbl">J</div><div class="bar-lbl">V</div><div class="bar-lbl">S</div><div class="bar-lbl">D</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Horas de más actividad</div>
+        <div style="display:flex;gap:3px;">
+          <div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.1;"></div><div class="hour-cell" style="opacity:.2;"></div><div class="hour-cell" style="opacity:.3;"></div><div class="hour-cell" style="background:var(--grad);opacity:.5;"></div><div class="hour-cell" style="background:var(--grad);opacity:.7;"></div><div class="hour-cell" style="background:var(--grad);opacity:.5;"></div><div class="hour-cell" style="opacity:.3;"></div><div class="hour-cell" style="background:var(--grad);opacity:.6;"></div><div class="hour-cell" style="background:var(--grad);opacity:.9;"></div><div class="hour-cell" style="background:var(--grad);opacity:1;"></div><div class="hour-cell" style="background:var(--grad);opacity:.8;"></div><div class="hour-cell" style="background:var(--grad);opacity:.6;"></div><div class="hour-cell" style="background:var(--grad);opacity:.9;"></div><div class="hour-cell" style="background:var(--grad);opacity:1;"></div><div class="hour-cell" style="background:var(--grad);opacity:.7;"></div><div class="hour-cell" style="background:var(--grad);opacity:.5;"></div><div class="hour-cell" style="opacity:.3;"></div><div class="hour-cell" style="opacity:.2;"></div><div class="hour-cell" style="opacity:.1;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:9px;color:var(--text3);"><span>00h</span><span>08h</span><span>14h</span><span>20h</span><span>23h</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px;">📍 Pico de actividad: <span style="color:var(--purple);">19h–21h</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-title">Zonas con más conexiones</div>
+        <div class="stat-row"><span style="font-size:12px;color:var(--text);">🏛️ Campus UdL</span><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;"><div style="width:85%;height:100%;background:var(--grad);border-radius:3px;"></div></div><span style="font-size:11px;color:var(--purple);">85%</span></div></div>
+        <div class="stat-row"><span style="font-size:12px;color:var(--text);">🛍️ Centre Comercial</span><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;"><div style="width:60%;height:100%;background:var(--grad);border-radius:3px;"></div></div><span style="font-size:11px;color:var(--purple);">60%</span></div></div>
+        <div class="stat-row"><span style="font-size:12px;color:var(--text);">🌳 Parc de la Mitjana</span><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;"><div style="width:40%;height:100%;background:var(--grad);border-radius:3px;"></div></div><span style="font-size:11px;color:var(--purple);">40%</span></div></div>
+      </div>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- PREMIUM -->
+  <div id="s-prem" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="back-hdr"><div class="back-btn" onclick="go('s-prof')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div><div class="back-title" style="background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Aura Premium</div></div>
+    <div style="text-align:center;padding:6px 24px 8px;flex-shrink:0;"><div style="font-size:26px;margin-bottom:4px;">✦</div><div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px;">Conecta sin límites</div><div style="font-size:12px;color:var(--text2);">Más visibilidad. Más conexiones. Más tú.</div></div>
+    <div class="ptogs">
+      <div class="ptog on" id="pt-m" onclick="setPeriod('m')">Mensual</div>
+      <div class="ptog" id="pt-a" onclick="setPeriod('a')">Anual <span style="background:var(--grad);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;">-40%</span></div>
+    </div>
+    <div class="scroll" style="padding:0 12px 10px;">
+      <div class="plan sel" id="pl-plus" onclick="pickPlan('plus')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:14px;font-weight:700;color:var(--text);">Plus</span><span style="background:var(--grad);color:#fff;font-size:9px;padding:2px 8px;border-radius:8px;font-weight:700;">MÁS POPULAR</span></div><div style="font-size:11px;color:var(--text2);margin-top:1px;">Para conectar de verdad</div></div><div><div style="font-size:19px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;" id="pp-p">5,99€</div><div style="font-size:10px;color:var(--text3);text-align:right;" id="pp-s">/mes</div></div></div>
+        <div class="fi ok"><i class="ti ti-check"></i>Radar ampliado (500m) · Solicitudes ilimitadas</div>
+        <div class="fi ok"><i class="ti ti-check"></i>Ver quién te vio · Modo fantasma · Chat</div>
+        <div class="fi no"><i class="ti ti-x"></i>Boost incluido · Radar 1km</div>
+      </div>
+      <div class="plan" id="pl-pro" onclick="pickPlan('pro')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:14px;font-weight:700;color:var(--text);">Pro</span><span style="background:rgba(251,191,36,.15);color:var(--amber);font-size:9px;padding:2px 8px;border-radius:8px;font-weight:700;border:0.5px solid rgba(251,191,36,.3);">✦ TOP</span></div><div style="font-size:11px;color:var(--text2);margin-top:1px;">Para los más sociables</div></div><div><div style="font-size:19px;font-weight:800;color:var(--amber);" id="pro-p">9,99€</div><div style="font-size:10px;color:var(--text3);text-align:right;" id="pro-s">/mes</div></div></div>
+        <div class="fi ok"><i class="ti ti-check"></i>Todo lo de Plus</div>
+        <div class="fi ok"><i class="ti ti-check"></i>Radar 1km en tiempo real · 3 Boosts/mes</div>
+        <div class="fi ok"><i class="ti ti-check"></i>Perfil destacado · Estadísticas avanzadas</div>
+      </div>
+      <div style="background:rgba(251,191,36,.07);border:0.5px solid rgba(251,191,36,.25);border-radius:16px;padding:11px 13px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">⚡</span><div><div style="font-size:13px;font-weight:700;color:var(--text);">Boost puntual</div><div style="font-size:11px;color:var(--text2);">Aparece primero 30 min</div></div></div><div style="font-size:15px;font-weight:800;color:var(--amber);">1,99€</div></div>
+        <button style="width:100%;background:rgba(251,191,36,.15);border:0.5px solid rgba(251,191,36,.3);border-radius:10px;padding:8px;font-size:12px;color:var(--amber);font-weight:600;cursor:pointer;" onclick="toast('⚡ Boost activado — 30 min de visibilidad máxima')">Activar Boost ahora</button>
+      </div>
+      <button class="cta" id="cta-btn" onclick="toast('✓ ¡Bienvenido a Aura Plus!')">Empezar con Plus — 5,99€/mes</button>
+      <div style="text-align:center;font-size:10px;color:var(--text3);margin-bottom:3px;">Cancela cuando quieras · Sin permanencia</div>
+      <div style="text-align:center;font-size:10px;color:var(--text3);">Pago seguro vía App Store / Google Play</div>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- BLOQUEADOS -->
+  <div id="s-block" class="screen">
+    <div class="notch"></div><div class="sbar"><span>9:41</span></div>
+    <div class="back-hdr"><div class="back-btn" onclick="go('s-prof')"><i class="ti ti-arrow-left" style="font-size:18px;color:var(--text2);"></i></div><div class="back-title">Usuarios bloqueados</div></div>
+    <div style="margin:0 12px 8px;background:rgba(248,113,113,.07);border:0.5px solid rgba(248,113,113,.2);border-radius:13px;padding:10px 13px;display:flex;gap:9px;align-items:flex-start;flex-shrink:0;"><i class="ti ti-info-circle" style="font-size:17px;color:var(--red);flex-shrink:0;"></i><div style="font-size:11px;color:var(--text2);">Las personas bloqueadas no pueden verte en el radar ni enviarte solicitudes.</div></div>
+    <div class="rlist scroll" style="padding:0 12px;">
+      <div class="req" id="bl1"><div class="rav" style="background:#374151;">PP</div><div class="rinfo"><div class="rname">@pepitopig</div><div class="rsub">Bloqueado hace 3 días</div></div><button class="btn-d" onclick="unblock('bl1')">Desbloquear</button></div>
+      <div class="req" id="bl2"><div class="rav" style="background:#374151;">XY</div><div class="rinfo"><div class="rname">@xy_user99</div><div class="rsub">Bloqueado hace 1 semana</div></div><button class="btn-d" onclick="unblock('bl2')">Desbloquear</button></div>
+    </div>
+    <div class="bnav">
+      <div class="ni" onclick="go('s-radar')"><div class="ni-wrap"><i class="ti ti-radar-2"></i></div><span>Radar</span></div>
+      <div class="ni" onclick="go('s-chats')"><div class="ni-wrap"><i class="ti ti-message-2"></i></div><span>Chats</span></div>
+      <div class="ni" onclick="go('s-hist')"><div class="ni-wrap"><i class="ti ti-history"></i></div><span>Historial</span></div>
+      <div class="ni on"><div class="ni-wrap"><i class="ti ti-user"></i></div><span>Perfil</span></div>
+    </div>
+  </div>
+
+  <!-- MATCH OVERLAY -->
+  <div class="overlay" id="matchOv">
+    <div class="stars"><span class="star">✦</span><span class="star">✦</span><span class="star">✦</span></div>
+    <div class="ov-title">¡Nueva conexión!</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;">Laura y tú os habéis seguido mutuamente</div>
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#db2777);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;">A</div>
+      <span style="font-size:24px;">💜</span>
+      <div style="width:64px;height:64px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;">LG</div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;">Estabais a solo <span style="color:var(--purple);font-weight:700;">32 metros</span></div>
+    <button class="ov-btn" onclick="closeOv('matchOv');go('s-chats')">Abrir chat con Laura</button>
+    <div class="ov-skip" onclick="closeOv('matchOv')">Ahora no</div>
+  </div>
+
+  <!-- EVENTO OVERLAY -->
+  <div class="overlay" id="eventoOv">
+    <div style="font-size:32px;">🎉</div>
+    <div class="ov-title" style="background:linear-gradient(135deg,#fbbf24,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Modo Evento</div>
+    <div style="font-size:13px;color:var(--text2);text-align:center;">Activa un radio especial para festivales o conciertos. Verás a muchas más personas alrededor.</div>
+    <div style="background:var(--bg3);border:0.5px solid var(--border);border-radius:16px;padding:14px;width:100%;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Nombre del evento (opcional)</div>
+      <input style="width:100%;background:var(--bg4);border:0.5px solid var(--border2);border-radius:11px;padding:10px 13px;font-size:13px;color:var(--text);outline:none;" placeholder="ej. Lleida Rocks 2026">
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">Radio: 50m · Activo hasta que lo desactives</div>
+    </div>
+    <button class="ov-btn" style="background:linear-gradient(135deg,#d97706,#f472b6);" onclick="closeOv('eventoOv');toast('🎉 Modo Evento activado')">Activar Modo Evento</button>
+    <div class="ov-skip" onclick="closeOv('eventoOv')">Cancelar</div>
+  </div>
+
+  <!-- FILTER MODAL -->
+  <div class="fmodal" id="fmodal">
+    <div class="fsheet">
+      <div style="font-size:15px;font-weight:700;color:var(--text);display:flex;justify-content:space-between;margin-bottom:12px;">Filtros <span style="font-size:20px;color:var(--text3);cursor:pointer;line-height:1;" onclick="hideFmodal()">✕</span></div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Radio de búsqueda</div>
+      <input type="range" min="50" max="500" value="200" class="range" oninput="document.getElementById('frv').textContent=this.value+'m'">
+      <div style="font-size:12px;color:var(--purple);margin-bottom:10px;" id="frv">200m</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Mostrar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;">
+        <div class="fopt on" onclick="pickF(this)">Todos</div>
+        <div class="fopt" onclick="pickF(this)">Solo mutuos</div>
+        <div class="fopt" onclick="pickF(this)">Nuevos hoy</div>
+        <div class="fopt" onclick="pickF(this)">Más cercanos</div>
+      </div>
+      <button style="width:100%;background:var(--grad);border:none;border-radius:13px;padding:13px;font-size:14px;color:#fff;font-weight:700;cursor:pointer;" onclick="hideFmodal()">Aplicar filtros</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+<div class="lbl">App principal</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script>
+const ALL=['s-splash','s-onb2','s-onb3','s-onb4','s-radar','s-chats','s-chat','s-chat2','s-hist','s-req','s-prof','s-stats','s-prem','s-block'];
+function go(id){ALL.forEach(s=>{const e=document.getElementById(s);if(e)e.classList.toggle('active',s===id);});}
+
+const LLEIDA=[41.6176,0.6200];
+const USERS=[
+  {pos:[41.6191,0.6228],color:'#7c3aed',init:'LG',hdl:'@lauragg',dist:'32m'},
+  {pos:[41.6165,0.6245],color:'#0e7490',init:'MV',hdl:'@marc.v',dist:'78m'},
+  {pos:[41.6155,0.6178],color:'#be185d',init:'SM',hdl:'@sofiamr',dist:'95m'},
+  {pos:[41.6198,0.6160],color:'#b45309',init:'JB',hdl:'@jordibcn',dist:'120m'},
+  {pos:[41.6183,0.6210],color:'#065f46',init:'NF',hdl:'@nuria.f',dist:'45m'},
+];
+function initMap(){
+  const map=L.map('leafmap',{zoomControl:false,attributionControl:false,scrollWheelZoom:false,doubleClickZoom:false}).setView(LLEIDA,17);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  L.circle(LLEIDA,{radius:200,color:'#c084fc',fillColor:'#c084fc',fillOpacity:.05,weight:1,opacity:.2}).addTo(map);
+  L.marker(LLEIDA,{icon:L.divIcon({className:'',html:'<div class="me-marker"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:999}).addTo(map);
+  USERS.forEach(u=>{
+    L.marker(u.pos,{icon:L.divIcon({className:'',html:`<div class="umark" style="background:${u.color};">${u.init}</div>`,iconSize:[32,32],iconAnchor:[16,16]})})
+    .addTo(map).bindPopup(`<div class="pop-hdl">${u.hdl}</div><div class="pop-dist">📍 ${u.dist}</div><button class="pop-btn" onclick="toast('Solicitud enviada a ${u.hdl}')">Seguir en Instagram</button>`);
+  });
+}
+window.addEventListener('load',()=>setTimeout(initMap,400));
+
+let vis=true;
+function toggleVis(){vis=!vis;document.getElementById('vdot').className='pdot'+(vis?'':' off');document.getElementById('vlbl').textContent=vis?'Visible':'Invisible';}
+
+function followCard(btn,name){
+  btn.textContent='Enviado';btn.className='cbtn sent';
+  if(name==='Laura')setTimeout(()=>{btn.textContent='✓ Match';btn.className='cbtn match';showOv('matchOv');},1200);
+}
+
+function setTag(el){
+  document.querySelectorAll('.ftag').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  const txt=el.textContent.trim();
+  const cards=document.querySelectorAll('#cards-row .card');
+  let n=0;
+  cards.forEach(c=>{
+    const d=parseInt(c.dataset.dist),m=c.dataset.mutual==='1',nw=c.dataset.new==='1';
+    let show=true;
+    if(txt.includes('100m')) show=d<=100;
+    else if(txt.includes('Mutuos')) show=m;
+    else if(txt.includes('Nuevos')) show=nw;
+    c.style.display=show?'flex':'none';
+    if(show)n++;
+  });
+  document.getElementById('sc').textContent=n+' persona'+(n===1?'':'s');
+}
+
+function stab(t){['rec','env','mat'].forEach(id=>{document.getElementById('t-'+id).classList.toggle('on',id===t);document.getElementById('p-'+id).style.display=id===t?'block':'none';});}
+
+function acceptReq(id){const e=document.getElementById(id);e.classList.add('dim');setTimeout(()=>e.style.display='none',350);}
+function unblock(id){const e=document.getElementById(id);e.classList.add('dim');setTimeout(()=>{e.style.display='none';toast('Usuario desbloqueado');},350);}
+
+function sendMsg(){
+  const inp=document.getElementById('cinput'),txt=inp.value.trim();if(!txt)return;
+  const msgs=document.getElementById('msgs');
+  const w=document.createElement('div');w.style.alignSelf='flex-end';
+  w.innerHTML=`<div class="msg out">${txt}</div><div class="msg-time r">ahora</div>`;
+  msgs.appendChild(w);msgs.scrollTop=msgs.scrollHeight;inp.value='';
+  setTimeout(()=>{const r=document.createElement('div');r.innerHTML='<div class="msg in">😊</div><div class="msg-time">ahora</div>';msgs.appendChild(r);msgs.scrollTop=msgs.scrollHeight;},900);
+}
+
+function showOv(id){document.getElementById(id).classList.add('show');}
+function closeOv(id){document.getElementById(id).classList.remove('show');}
+function showFmodal(){document.getElementById('fmodal').classList.add('show');}
+function hideFmodal(){document.getElementById('fmodal').classList.remove('show');}
+function pickF(el){document.querySelectorAll('.fopt').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+
+const prices={m:{pp:'5,99€',pro:'9,99€',ps:'/mes',prs:'/mes'},a:{pp:'3,59€',pro:'5,99€',ps:'/mes · 43€/año',prs:'/mes · 71€/año'}};
+let period='m',selPlan='plus';
+function setPeriod(p){
+  period=p;
+  ['m','a'].forEach(id=>document.getElementById('pt-'+id).classList.toggle('on',id===p));
+  document.getElementById('pp-p').textContent=prices[p].pp;document.getElementById('pp-s').textContent=prices[p].ps;
+  document.getElementById('pro-p').textContent=prices[p].pro;document.getElementById('pro-s').textContent=prices[p].prs;
+  updateCTA();
+}
+function pickPlan(p){
+  selPlan=p;
+  ['plus','pro'].forEach(id=>{const e=document.getElementById('pl-'+id);if(e){e.classList.toggle('sel',id===p);e.style.borderWidth=id===p?'1.5px':'0.5px';}});
+  updateCTA();
+}
+function updateCTA(){
+  const btn=document.getElementById('cta-btn');
+  if(selPlan==='plus'){btn.textContent=`Empezar con Plus — ${prices[period].pp}/mes`;btn.style.background='';}
+  else{btn.textContent=`Empezar con Pro — ${prices[period].pro}/mes`;btn.style.background='linear-gradient(135deg,#d97706,#f59e0b)';}
+}
+
+let tt;
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.style.opacity='1';clearTimeout(tt);tt=setTimeout(()=>e.style.opacity='0',2600);}
+</script>
+</body>
+</html>
